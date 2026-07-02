@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mein Trainingsplan</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green: #5DCAA5; --green-light: #E1F5EE; --green-dark: #085041;
+    --pink: #D4537E; --pink-light: #FBEAF0; --pink-dark: #4B1528;
+    --blue: #378ADD; --blue-light: #E6F1FB; --blue-dark: #0C447C;
+    --muted: #888780; --text: #2C2C2A; --border: #D3D1C7; --bg: #F7F5F0;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header { background: white; border-bottom: 1px solid var(--border); padding: 16px 20px 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .header-logo { width: 36px; height: 36px; background: var(--green); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .header-title { font-size: 18px; font-weight: 700; }
+  .header-sub { font-size: 12px; color: var(--muted); }
+  .tabs { display: flex; }
+  .tab { flex: 1; padding: 10px 6px; border: none; background: none; font-size: 13px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; }
+  .tab.active { color: var(--green-dark); border-bottom-color: var(--green); font-weight: 700; }
+
+  .content { padding: 16px; max-width: 540px; margin: 0 auto; }
+
+  /* PLAN */
+  .plan-hero { background: linear-gradient(135deg, var(--green-light), var(--pink-light)); border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+  .plan-hero h2 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .plan-hero p { font-size: 13px; color: var(--muted); }
+
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 16px; }
+  .week-day { border-radius: 8px; padding: 8px 4px; text-align: center; border-top: 3px solid transparent; }
+  .week-day .wd-name { font-size: 10px; font-weight: 700; margin-bottom: 3px; }
+  .week-day .wd-label { font-size: 9px; font-weight: 600; margin-bottom: 2px; }
+  .week-day .wd-desc { font-size: 8px; line-height: 1.3; }
+
+  .day-card { background: white; border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 14px; }
+  .day-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
+  .day-card-title { font-size: 15px; font-weight: 700; color: white; }
+  .day-card-badge { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .exercise-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; padding: 10px 16px; align-items: start; border-top: 1px solid var(--border); }
+  .exercise-row:nth-child(even) { background: #FAFAF8; }
+  .ex-num { font-size: 11px; font-weight: 700; color: var(--muted); padding-top: 2px; }
+  .ex-name { font-size: 13px; font-weight: 600; }
+  .ex-hint { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .ex-stats { font-size: 11px; font-weight: 700; text-align: right; padding-top: 2px; white-space: nowrap; }
+  .day-footer { padding: 10px 16px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; border-top: 1px solid var(--border); background: var(--bg); }
+
+  .tip-box { background: var(--blue-light); border-left: 3px solid var(--blue); border-radius: 0 10px 10px 0; padding: 12px 16px; margin-top: 14px; font-size: 13px; color: var(--blue-dark); line-height: 1.5; }
+
+  /* TRACKER */
+  .tag-switch { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tag-btn { flex: 1; padding: 11px 8px; border-radius: 10px; border: 1.5px solid var(--border); background: white; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .tag-btn.active-a { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
+  .tag-btn.active-b { border-color: var(--pink); background: var(--pink-light); color: var(--pink-dark); }
+
+  .tracker-table { background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 14px; }
+  .tracker-head { display: grid; grid-template-columns: 1fr 54px 46px 46px 46px; gap: 3px; padding: 9px 12px; font-size: 11px; font-weight: 700; color: white; }
+  .tracker-head span:not(:first-child) { text-align: center; }
+  .tracker-row { display: grid; grid-template-columns: 1fr 54px 46px 46px 46px; gap: 3px; padding: 9px 10px; align-items: center; border-top: 1px solid var(--border); }
+  .tracker-row:nth-child(even) { background: #FAFAF8; }
+  .row-name { font-size: 12px; font-weight: 500; line-height: 1.3; }
+  .tracker-input { width: 100%; padding: 6px 2px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; text-align: center; color: var(--text); background: white; -moz-appearance: textfield; }
+  .tracker-input::-webkit-outer-spin-button, .tracker-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .tracker-input:focus { outline: none; border-color: var(--green); }
+  .tracker-input:disabled { background: var(--bg); color: var(--muted); }
+
+  .btn-primary { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; color: white; cursor: pointer; margin-bottom: 10px; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.9; }
+
+  .success-box { background: var(--green-light); border: 1px solid var(--green); border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--green-dark); text-align: center; margin-bottom: 12px; }
+
+  /* NEXT PLAN */
+  .next-intro { border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid; }
+  .next-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+  .next-text { font-size: 14px; line-height: 1.6; }
+  .next-row { display: grid; grid-template-columns: 1fr 80px; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); align-items: start; }
+  .next-row:nth-child(even) { background: #FAFAF8; }
+  .next-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .next-tip { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .next-kg { font-size: 16px; font-weight: 800; text-align: center; padding-top: 2px; }
+  .next-note { font-size: 10px; font-weight: 500; text-align: center; margin-top: 2px; }
+
+  /* HISTORY */
+  .history-card { background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
+  .history-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .history-tag { font-size: 13px; font-weight: 700; }
+  .history-date { font-size: 12px; color: var(--muted); }
+  .history-row { display: grid; grid-template-columns: 1fr auto; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .history-row:last-child { border-bottom: none; }
+  .history-stats { font-size: 12px; font-weight: 600; }
+
+  .empty-box { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; margin-bottom: 16px; line-height: 1.5; }
+
+  .progress-bar-wrap { background: var(--border); border-radius: 4px; height: 5px; margin-top: 4px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="header-logo">💪</div>
+    <div>
+      <div class="header-title">Mein Trainingsplan</div>
+      <div class="header-sub">2× pro Woche · Ganzkörper · Neustart</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('plan')">Plan</button>
+    <button class="tab" onclick="showTab('tracker')">Tracker</button>
+    <button class="tab" onclick="showTab('next')">Nächstes</button>
+    <button class="tab" onclick="showTab('history')">Verlauf</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <div id="tab-plan">
+    <div class="plan-hero">
+      <h2>Dein Trainingsplan 🏋️</h2>
+      <p>2× die Woche · 3 Sätze · 8–12 Wiederholungen · Spaß im Fokus</p>
+    </div>
+    <div class="week-grid" id="weekGrid"></div>
+    <div class="day-card">
+      <div class="day-card-header" style="background:var(--green)">
+        <div class="day-card-title">Tag A — Ganzkörper</div>
+        <div class="day-card-badge" style="background:var(--green-light);color:var(--green-dark)">Zug & Beine</div>
+      </div>
+      <div id="planA"></div>
+      <div class="day-footer"><span>3 Sätze · 8–12 Wdh · ~90 Sek Pause</span><span>🎧 Cardio + Podcast</span></div>
+    </div>
+    <div class="day-card">
+      <div class="day-card-header" style="background:var(--pink)">
+        <div class="day-card-title">Tag B — Ganzkörper</div>
+        <div class="day-card-badge" style="background:var(--pink-light);color:var(--pink-dark)">Druck & Ausdauer</div>
+      </div>
+      <div id="planB"></div>
+      <div class="day-footer"><span>3 Sätze · 8–12 Wdh · ~90 Sek Pause</span><span>🎧 Cardio + Podcast</span></div>
+    </div>
+    <div class="tip-box"><strong>Laufen:</strong> 1× pro Woche zusätzlich — Lauf-Geh-Methode: 1 Min laufen, 2 Min gehen, 20–25 Min. Nach 6–8 Wochen läufst du locker durch! 🏃‍♀️</div>
+  </div>
+
+  <div id="tab-tracker" style="display:none">
+    <div class="tag-switch">
+      <button class="tag-btn active-a" id="btnA" onclick="switchTag('A')">Tag A · Zug & Beine</button>
+      <button class="tag-btn" id="btnB" onclick="switchTag('B')">Tag B · Druck & Ausdauer</button>
+    </div>
+    <div class="tracker-table">
+      <div class="tracker-head" id="trackerHead">
+        <span>Übung</span><span>kg</span><span>S1</span><span>S2</span><span>S3</span>
+      </div>
+      <div id="trackerRows"></div>
+    </div>
+    <button class="btn-primary" id="saveBtn" onclick="saveSession()">Training speichern 💪</button>
+    <div id="savedMsg" style="display:none" class="success-box">✅ Gespeichert! Schau unter "Nächstes" für deinen Plan.</div>
+  </div>
+
+  <div id="tab-next" style="display:none">
+    <div id="nextContent"></div>
+  </div>
+
+  <div id="tab-history" style="display:none">
+    <div id="historyContent"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const TAG_A = [
+  { name: "Rudergerät aufwärmen", hint: "5–8 Min locker, Kreislauf ankurbeln", warmup: true },
+  { name: "Rudern sitzend",       hint: "Langsam & kontrolliert, Rücken spüren" },
+  { name: "Beinpresse",           hint: "Ruhige Bewegung, volles Bewegungsausmaß" },
+  { name: "Brustpresse",          hint: "Kontrolliert drücken, Brust erspüren" },
+  { name: "Bizeps Curl Maschine", hint: "Dehnung am Ende spüren, nicht schwingen" },
+  { name: "Hip Thrust",           hint: "Gesäß bewusst aktivieren, kurz oben halten" },
+];
+const TAG_B = [
+  { name: "Rudergerät aufwärmen",   hint: "5–8 Min locker, Kopf frei bekommen", warmup: true },
+  { name: "Chest Press Maschine",   hint: "Schräg nach oben drücken, kontrolliert" },
+  { name: "T-Bar Rudern",           hint: "Rücken bewusst spüren, langsame Bewegung" },
+  { name: "Beinbeuger Maschine",    hint: "Ruhig & kontrolliert, kein Schwung" },
+  { name: "Trizeps Kabelturm",      hint: "Ellbogen fest am Körper, sauber drücken" },
+  { name: "Seitheben Schulter",     hint: "Kein Schwung, kleines Gewicht, Muskel spüren" },
+];
+const WEEK = [
+  { day:"Mo", label:"Tag A", desc:"Zug &\nBeine",       type:"a" },
+  { day:"Di", label:"Pause", desc:"Erholen",             type:"rest" },
+  { day:"Mi", label:"Pause", desc:"Erholen",             type:"rest" },
+  { day:"Do", label:"Tag B", desc:"Druck &\nAusdauer",  type:"b" },
+  { day:"Fr", label:"Pause", desc:"Erholen",             type:"rest" },
+  { day:"Sa", label:"Laufen",desc:"optional\n20–25 Min",type:"run" },
+  { day:"So", label:"Pause", desc:"Ruhetag",             type:"rest" },
+];
+
+// ─── PROGRESSION LOGIC ──────────────────────────────────────────────────────
+// Regeln:
+// • Alle 3 Sätze ≥ 12 Wdh  →  Gewicht +5% (aufgerundet auf 0.5kg)
+// • Letzter Satz < 8 Wdh   →  Gewicht −5% (abgerundet auf 0.5kg)
+// • Sonst                   →  gleiches Gewicht
+function roundToHalf(n) { return Math.round(n * 2) / 2; }
+
+function calcNextKg(kg, reps) {
+  if (!kg || reps.length === 0) return kg;
+  const nums = reps.map(Number).filter(r => r > 0);
+  if (nums.length === 0) return kg;
+  const allMax = nums.every(r => r >= 12);
+  const lastLow = nums[nums.length - 1] < 8;
+  if (allMax)  return roundToHalf(kg * 1.05);
+  if (lastLow) return roundToHalf(kg * 0.95);
+  return kg;
+}
+
+function progressionNote(kg, nextKg) {
+  if (!kg || !nextKg) return "";
+  if (nextKg > kg) return "↑ Gewicht steigern";
+  if (nextKg < kg) return "↓ Etwas leichter";
+  return "→ Gewicht halten";
+}
+
+// ─── STORAGE ────────────────────────────────────────────────────────────────
+let history = JSON.parse(localStorage.getItem("trainingHistory") || "[]");
+let currentTag = "A";
+let currentRows = [];
+
+function saveHistory() { localStorage.setItem("trainingHistory", JSON.stringify(history)); }
+
+// ─── WEEK GRID ──────────────────────────────────────────────────────────────
+function renderWeekGrid() {
+  const C = {
+    a:    { bg:"var(--green-light)", tc:"var(--green-dark)", border:"var(--green)" },
+    b:    { bg:"var(--pink-light)",  tc:"var(--pink-dark)",  border:"var(--pink)"  },
+    run:  { bg:"var(--blue-light)",  tc:"var(--blue-dark)",  border:"var(--blue)"  },
+    rest: { bg:"#F1EFE8",            tc:"var(--muted)",      border:"var(--border)"},
+  };
+  document.getElementById("weekGrid").innerHTML = WEEK.map(w => {
+    const c = C[w.type];
+    return `<div class="week-day" style="background:${c.bg};border-top-color:${c.border}">
+      <div class="wd-name"  style="color:${c.tc}">${w.day}</div>
+      <div class="wd-label" style="color:${c.tc}">${w.label}</div>
+      <div class="wd-desc"  style="color:${c.tc}">${w.desc.replace(/\n/g,"<br>")}</div>
+    </div>`;
+  }).join("");
+}
+
+// ─── PLAN VIEW ──────────────────────────────────────────────────────────────
+function renderPlan() {
+  const lastA = history.find(s => s.tag === "A");
+  const lastB = history.find(s => s.tag === "B");
+
+  function rows(exercises, last, colDark) {
+    return exercises.map((ex, i) => {
+      const t = last?.exercises?.find(e => e.name === ex.name);
+      const statsHtml = t?.kg
+        ? `<div class="ex-stats" style="color:${colDark}">${t.kg}kg<br><span style="color:var(--muted);font-size:10px">${t.s1}/${t.s2}/${t.s3}</span></div>`
+        : "";
+      return `<div class="exercise-row">
+        <div class="ex-num">${i+1}</div>
+        <div><div class="ex-name">${ex.name}</div><div class="ex-hint">${ex.hint}</div></div>
+        ${statsHtml}
+      </div>`;
+    }).join("");
+  }
+  document.getElementById("planA").innerHTML = rows(TAG_A, lastA, "var(--green-dark)");
+  document.getElementById("planB").innerHTML = rows(TAG_B, lastB, "var(--pink-dark)");
+}
+
+// ─── TRACKER ────────────────────────────────────────────────────────────────
+function renderTracker() {
+  const exs = currentTag === "A" ? TAG_A : TAG_B;
+  const col  = currentTag === "A" ? "var(--green)" : "var(--pink)";
+  document.getElementById("trackerHead").style.background = col;
+  document.getElementById("saveBtn").style.background = col;
+
+  // Pre-fill from last session of same tag
+  const last = history.find(s => s.tag === currentTag);
+
+  currentRows = exs.map(ex => {
+    const prev = last?.exercises?.find(e => e.name === ex.name);
+    return { name: ex.name, kg: prev?.kg || "", s1: "", s2: "", s3: "", warmup: !!ex.warmup };
+  });
+
+  document.getElementById("trackerRows").innerHTML = exs.map((ex, i) => {
+    const prev = last?.exercises?.find(e => e.name === ex.name);
+    const nextKg = prev?.kg ? calcNextKg(Number(prev.kg), [prev.s1, prev.s2, prev.s3]) : "";
+    const placeholder = nextKg ? `${nextKg}` : "—";
+    return `<div class="tracker-row">
+      <div class="row-name">${ex.name}${prev?.kg ? `<div style="font-size:10px;color:var(--muted)">letztes Mal: ${prev.kg}kg</div>` : ""}</div>
+      <input class="tracker-input" type="number" id="r${i}_kg" value="${currentRows[i].kg}" placeholder="${placeholder}" ${ex.warmup?"disabled":""} oninput="updateRow(${i},'kg',this.value)">
+      <input class="tracker-input" type="number" id="r${i}_s1" placeholder="Wdh" ${ex.warmup?"disabled":""} oninput="updateRow(${i},'s1',this.value)">
+      <input class="tracker-input" type="number" id="r${i}_s2" placeholder="Wdh" ${ex.warmup?"disabled":""} oninput="updateRow(${i},'s2',this.value)">
+      <input class="tracker-input" type="number" id="r${i}_s3" placeholder="Wdh" ${ex.warmup?"disabled":""} oninput="updateRow(${i},'s3',this.value)">
+    </div>`;
+  }).join("");
+
+  document.getElementById("savedMsg").style.display = "none";
+}
+
+function updateRow(i, field, val) { currentRows[i][field] = val; }
+
+function switchTag(t) {
+  currentTag = t;
+  document.getElementById("btnA").className = "tag-btn" + (t==="A"?" active-a":"");
+  document.getElementById("btnB").className = "tag-btn" + (t==="B"?" active-b":"");
+  renderTracker();
+}
+
+function saveSession() {
+  const session = {
+    date: new Date().toLocaleDateString("de-DE"),
+    tag: currentTag,
+    exercises: currentRows.filter(r => r.kg || r.s1),
+  };
+  history = [session, ...history].slice(0, 30);
+  saveHistory();
+  document.getElementById("savedMsg").style.display = "block";
+  renderPlan();
+  renderHistory();
+  renderNext();
+}
+
+// ─── NEXT SESSION ───────────────────────────────────────────────────────────
+function renderNext() {
+  const el = document.getElementById("nextContent");
+  if (!history.length) {
+    el.innerHTML = `<div class="empty-box"><div class="empty-icon">📋</div><div class="empty-text">Trag zuerst ein Training ein —<br>dann berechne ich deinen nächsten Plan automatisch.</div></div>`;
+    return;
+  }
+
+  const nextTag  = history[0].tag === "A" ? "B" : "A";
+  const lastNext = history.find(s => s.tag === nextTag); // last time we did nextTag
+  const exs      = nextTag === "A" ? TAG_A : TAG_B;
+  const isA      = nextTag === "A";
+  const col      = isA ? "var(--green)"       : "var(--pink)";
+  const colLight = isA ? "var(--green-light)" : "var(--pink-light)";
+  const colDark  = isA ? "var(--green-dark)"  : "var(--pink-dark)";
+
+  // Count sessions done
+  const totalSessions = history.length;
+  const nextNum = totalSessions + 1;
+
+  const rows = exs.map((ex, i) => {
+    if (ex.warmup) return `<div class="next-row" style="background:${i%2===0?"white":"#FAFAF8"}">
+      <div><div class="next-name">${ex.name}</div><div class="next-tip">${ex.hint}</div></div>
+      <div style="text-align:center;padding-top:4px"><div style="font-size:13px;color:var(--muted)">5–8 Min</div></div>
+    </div>`;
+
+    const prev = lastNext?.exercises?.find(e => e.name === ex.name);
+    const nextKg = prev?.kg ? calcNextKg(Number(prev.kg), [prev.s1, prev.s2, prev.s3]) : null;
+    const note   = prev?.kg ? progressionNote(Number(prev.kg), nextKg) : "Starte leicht";
+    const noteColor = note.startsWith("↑") ? "var(--green-dark)" : note.startsWith("↓") ? "var(--pink-dark)" : "var(--muted)";
+
+    // Progress bar: % of reps achieved in last session (avg across sets)
+    let barHtml = "";
+    if (prev?.s1) {
+      const avg = ([prev.s1, prev.s2, prev.s3].map(Number).reduce((a,b)=>a+b,0)) / 3;
+      const pct = Math.min(100, Math.round((avg / 12) * 100));
+      barHtml = `<div style="margin-top:4px"><div style="font-size:9px;color:var(--muted);margin-bottom:2px">Letztes Mal: ⌀ ${avg.toFixed(1)} Wdh</div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${col}"></div></div></div>`;
+    }
+
+    return `<div class="next-row" style="background:${i%2===0?"white":"#FAFAF8"}">
+      <div>
+        <div class="next-name">${ex.name}</div>
+        <div class="next-tip">${ex.hint}</div>
+        ${barHtml}
+      </div>
+      <div>
+        <div class="next-kg" style="color:${colDark}">${nextKg ? nextKg+"kg" : "—"}</div>
+        <div class="next-note" style="color:${noteColor}">${note}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  el.innerHTML = `
+    <div class="next-intro" style="background:${colLight};border-color:${col}">
+      <div class="next-label" style="color:${colDark}">Training #${nextNum} · Tag ${nextTag}</div>
+      <div class="next-text" style="color:${colDark}">
+        ${lastNext
+          ? "Basierend auf deinem letzten Tag-"+nextTag+"-Training wurde dein Plan automatisch angepasst. Du schaffst das! 💪"
+          : "Dein erstes Tag-"+nextTag+"-Training! Starte mit einem leichten Gewicht und taste dich ran."}
+      </div>
+    </div>
+    <div class="day-card">
+      <div class="day-card-header" style="background:${col}">
+        <div class="day-card-title">Tag ${nextTag} · Automatischer Plan</div>
+        <div class="day-card-badge" style="background:${colLight};color:${colDark}">${isA?"Zug & Beine":"Druck & Ausdauer"}</div>
+      </div>
+      ${rows}
+      <div class="day-footer"><span>3 Sätze · 8–12 Wdh · ~90 Sek Pause</span><span>🎧 Cardio danach</span></div>
+    </div>
+    <div class="tip-box">
+      <strong>Progression:</strong> Wenn du alle 3 Sätze mit 12 Wdh schaffst → Gewicht +5%. Letzter Satz unter 8 Wdh → Gewicht −5%. Sonst gleiches Gewicht halten.
+    </div>`;
+}
+
+// ─── HISTORY ────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const el = document.getElementById("historyContent");
+  if (!history.length) {
+    el.innerHTML = `<div class="empty-box"><div class="empty-icon">📂</div><div class="empty-text">Noch keine Trainings gespeichert.</div></div>`;
+    return;
+  }
+  el.innerHTML = history.map(s => {
+    const isA = s.tag === "A";
+    const colLight = isA ? "var(--green-light)" : "var(--pink-light)";
+    const colDark  = isA ? "var(--green-dark)"  : "var(--pink-dark)";
+    const exRows = s.exercises.filter(e => e.kg).map(e =>
+      `<div class="history-row"><span>${e.name}</span><span class="history-stats" style="color:${colDark}">${e.kg}kg · ${e.s1}/${e.s2}/${e.s3}</span></div>`
+    ).join("");
+    return `<div class="history-card">
+      <div class="history-head" style="background:${colLight}">
+        <span class="history-tag" style="color:${colDark}">Tag ${s.tag}</span>
+        <span class="history-date">${s.date}</span>
+      </div>
+      ${exRows}
+    </div>`;
+  }).join("");
+}
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function showTab(name) {
+  ["plan","tracker","next","history"].forEach((t,i) => {
+    document.getElementById("tab-"+t).style.display = t===name?"block":"none";
+    document.querySelectorAll(".tab")[i].classList.toggle("active", t===name);
+  });
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────────────
+renderWeekGrid();
+renderPlan();
+renderTracker();
+renderNext();
+renderHistory();
+</script>
+</body>
+</html>
